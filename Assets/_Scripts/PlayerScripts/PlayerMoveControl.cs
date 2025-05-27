@@ -41,11 +41,7 @@ namespace _Scripts.PlayerScripts
         private Vector3 moveDirection;
         private Rigidbody rb;
         public MoveState moveState;
-        [Header("Raycast Attack")]
-public Transform handTransform; // Vị trí tay
-public float rayLength = 10f;
-public LayerMask hitLayer;      // Layer chứa các vật có thể bị đánh
-public int damage = 10;
+
         public enum MoveState
         {
             Walking,
@@ -84,7 +80,6 @@ public int damage = 10;
             {
                 rb.drag = 0f;
             }
-            RaycastFromHand();
         }
 
         private void StateHandler()
@@ -223,28 +218,5 @@ public int damage = 10;
         {
             return Vector3.ProjectOnPlane(moveDirection, slopeHit.normal).normalized;
         }
-        private void RaycastFromHand()
-{
-    Vector3 origin = handTransform.position;
-    Vector3 direction = handTransform.forward;
-
-    // Luôn vẽ tia đỏ để debug (chỉ hiển thị trong Scene View)
-    Debug.DrawRay(origin, direction * rayLength, Color.red);
-
-    // Kiểm tra xem ray có chạm vào vật thể nào hay không
-    if (Physics.Raycast(origin, direction, out RaycastHit hit, rayLength, hitLayer))
-    {
-        // Nếu bấm chuột trái trong frame này
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            // Kiểm tra xem vật thể đó có component Health không
-            Health health = hit.collider.GetComponent<Health>();
-            if (health != null)
-            {
-                health.TakeDamage(damage);
-            }
-        }
-    }
-}
     }
 }

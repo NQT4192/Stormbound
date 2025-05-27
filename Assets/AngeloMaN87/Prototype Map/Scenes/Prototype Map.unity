@@ -921,12 +921,6 @@ MonoBehaviour:
     m_Bits: 8
   orientation: {fileID: 249718155}
   moveState: 0
-  handTransform: {fileID: 4007320597093984510}
-  rayLength: 100
-  hitLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  damage: 10
 --- !u!1 &1133655741
 GameObject:
   m_ObjectHideFlags: 0
@@ -15330,6 +15324,9 @@ MonoBehaviour:
   rayOrigin: {fileID: 4007320597093984510}
   maxDistance: 100
   damage: 10
+  bulletSpeed: 200
+  bulletLength: 2
+  bulletMaterial: {fileID: 0}
 --- !u!4 &8782620817729293870
 Transform:
   m_ObjectHideFlags: 0

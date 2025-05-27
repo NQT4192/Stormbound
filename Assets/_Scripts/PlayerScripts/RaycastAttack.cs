@@ -3,43 +3,106 @@ using UnityEngine;
 public class RaycastAttack : MonoBehaviour
 {
     [Header("Cấu hình Raycast")]
-    public Transform rayOrigin;       // Vị trí bắt đầu ray (tay hoặc camera)
-    public float maxDistance = 100f;  // Độ dài tối đa của ray
-    public int damage = 10;           // Sát thương gây ra
+    public Transform rayOrigin;
+    public float maxDistance = 100f;
+    public int damage = 10;
 
-    private RaycastHit hitInfo;       // Lưu thông tin va chạm
+    public float bulletSpeed = 200f;      
+    public float bulletLength = 2f;       
+    public Material bulletMaterial;
+
+    private RaycastHit hitInfo;
+    private Vector3 targetPoint;
+    private bool shooting = false;
+    private float traveledDistance = 0f;
+
+    private LineRenderer bulletLine;
 
     void Update()
     {
-        // 1. Luôn vẽ tia ray đỏ trong Scene view
         Vector3 direction = rayOrigin.forward;
 
-        bool isHit = Physics.Raycast(rayOrigin.position, direction, out hitInfo, maxDistance);
-
-        if (isHit)
+        // Nếu chưa bắn thì tìm điểm chạm mới
+        if (!shooting)
         {
-            // Nếu ray trúng vật, vẽ từ rayOrigin đến điểm trúng
-            Debug.DrawLine(rayOrigin.position, hitInfo.point, Color.red);
-        }
-        else
-        {
-            // Nếu không trúng gì, vẽ tia dài tối đa
-            Debug.DrawLine(rayOrigin.position, rayOrigin.position + direction * maxDistance, Color.red);
+            bool isHit = Physics.Raycast(rayOrigin.position, direction, out hitInfo, maxDistance);
+            targetPoint = isHit ? hitInfo.point : rayOrigin.position + direction * maxDistance;
         }
 
-        // 2. Gây sát thương khi bấm chuột trái và ray đang trúng vật
-        if (Input.GetMouseButtonDown(0) && isHit)
+        if (Input.GetMouseButtonDown(0) && !shooting)
         {
-            Health health = hitInfo.collider.GetComponent<Health>();
-            if (health != null)
+            shooting = true;
+            traveledDistance = 0f;
+
+            // Tạo LineRenderer mới cho viên đạn
+            if (bulletLine == null)
             {
-                health.TakeDamage(damage);
-                Debug.Log("Gây sát thương: " + damage + " vào " + hitInfo.collider.name);
-            }
-            else
-            {
-                Debug.Log("Vật trúng không có component Health.");
+                GameObject lineObj = new GameObject("BulletLine");
+                bulletLine = lineObj.AddComponent<LineRenderer>();
+                bulletLine.positionCount = 2;
+                bulletLine.material = bulletMaterial != null ? bulletMaterial : new Material(Shader.Find("Sprites/Default"));
+                bulletLine.startColor = Color.yellow;
+                bulletLine.endColor = Color.yellow;
+                bulletLine.startWidth = 0.02f;
+                bulletLine.endWidth = 0.02f;
             }
         }
+
+        if (shooting)
+        {
+            if (bulletLine == null)
+            {
+               
+                shooting = false;
+                return;
+            }
+
+            traveledDistance += bulletSpeed * Time.deltaTime;
+            float totalDistance = Vector3.Distance(rayOrigin.position, targetPoint);
+
+            if (traveledDistance > totalDistance)
+            {
+                traveledDistance = totalDistance;
+            }
+
+            Vector3 startPos = rayOrigin.position + rayOrigin.forward * Mathf.Max(traveledDistance - bulletLength, 0);
+            Vector3 endPos = rayOrigin.position + rayOrigin.forward * traveledDistance;
+
+            bulletLine.SetPosition(0, startPos);
+            bulletLine.SetPosition(1, endPos);
+
+            if (traveledDistance >= totalDistance)
+            {
+                shooting = false;
+
+                if (bulletLine != null)
+                {
+                    Destroy(bulletLine.gameObject, 0.05f);
+                    bulletLine = null; 
+                }
+
+                // Gây sát thương nếu trúng vật có Health
+                if (hitInfo.collider != null)
+                {
+                    Health health = hitInfo.collider.GetComponent<Health>();
+                    if (health != null)
+                    {
+                        health.TakeDamage(damage);
+                        Debug.Log("Gây sát thương: " + damage + " vào " + hitInfo.collider.name);
+                    }
+                    else
+                    {
+                        Debug.Log("Vật trúng không có component Health.");
+                    }
+
+                    ShowImpact(hitInfo.point, hitInfo.normal);
+                }
+            }
+        }
+    }
+
+    private void ShowImpact(Vector3 point, Vector3 normal)
+    {
+        Debug.DrawRay(point, normal * 0.3f, Color.white, 0.2f);
     }
 }
