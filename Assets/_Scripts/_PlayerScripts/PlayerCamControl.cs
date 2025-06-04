@@ -1,25 +1,46 @@
+using Mirror;
 using UnityEngine;
 
 namespace _Scripts._PlayerScripts
 {
-    public class PlayerCamControl : MonoBehaviour
+    public class PlayerCamControl : NetworkBehaviour
     {
         // TODO : Tích hợp vào trong PlayerMoveControl để dễ xử lý khi tích hợp mirror-networking(25/5/2025)(trung)
-        // 30/5/25 : ko cần phải tích hợp nữa 
         public float sensX;
         public float sensY;
         public Transform orientation;
         public Transform body;
         float xRotation, yRotation;
 
-        private void Start()
+        public override void OnStartClient()
         {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            base.OnStartClient();
+            if (isLocalPlayer)
+            {
+                
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+            else
+            {
+               
+                GetComponent<Camera>().enabled = false;
+                GetComponent<AudioListener>().enabled = false; 
+            }
         }
+
+        // private void Start()
+        // {
+        //     Cursor.lockState = CursorLockMode.Locked;
+        //     Cursor.visible = false;
+        // }
 
         private void Update()
         {
+            if (!isLocalPlayer)
+            {
+                return;
+            }
             float moveX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * sensX;
             float moveY = Input.GetAxisRaw("Mouse Y") * Time.deltaTime * sensY;
 
