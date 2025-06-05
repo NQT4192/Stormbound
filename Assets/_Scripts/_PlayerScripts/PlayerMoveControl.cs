@@ -133,7 +133,7 @@ namespace _Scripts._PlayerScripts
         {
             
             // Server cũng xử lý vật lý để là authoritative
-            if (isServer)
+            if (isLocalPlayer)
             {
                 MovePlayer();
                 SpeedControl();
@@ -162,7 +162,9 @@ namespace _Scripts._PlayerScripts
             if (Input.GetKey(jumpKey) && readyToJump && isGrounded)
             {
                 readyToJump = false;
-                CmdJump();
+                isOnSlope = true;
+                rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+                rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
                 Invoke(nameof(ResetJump), jumpCooldown);
             }
 
@@ -182,12 +184,7 @@ namespace _Scripts._PlayerScripts
         [Command]
         private void CmdJump()
         {
-            // Logic nhảy chỉ thực hiện trên server
-            isOnSlope = true;
-            // Sử dụng predictedRigidbody để đảm bảo tương thích với prediction
 
-            rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
-            rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
         }
 
         [Command]

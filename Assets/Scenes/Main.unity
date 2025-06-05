@@ -1279,6 +1279,7 @@ GameObject:
   - component: {fileID: 1555094446}
   - component: {fileID: 1555094447}
   - component: {fileID: 1555094448}
+  - component: {fileID: 1555094449}
   m_Layer: 0
   m_Name: GameManger
   m_TagString: Untagged
@@ -1325,7 +1326,7 @@ MonoBehaviour:
   maxConnections: 100
   disconnectInactiveConnections: 0
   disconnectInactiveTimeout: 60
-  authenticator: {fileID: 1555094447}
+  authenticator: {fileID: 1555094449}
   playerPrefab: {fileID: 4542065522658913608, guid: 7c5115e011d5413428c8ef1a4f0158f4, type: 3}
   autoCreatePlayer: 1
   playerSpawnMethod: 0
@@ -1419,6 +1420,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4632b552ef2c08645bae522176e5dd56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1555094449
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1555094442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60960a6ba81a842deb2fdcdc93788242, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  OnServerAuthenticated:
+    m_PersistentCalls:
+      m_Calls: []
+  OnClientAuthenticated:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1615703370
 GameObject:
   m_ObjectHideFlags: 0

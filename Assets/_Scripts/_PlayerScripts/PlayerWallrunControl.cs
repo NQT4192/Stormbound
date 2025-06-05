@@ -6,8 +6,6 @@ namespace _Scripts._PlayerScripts
 {
     public class PlayerWallrunControl : NetworkBehaviour
     {
-        #region DATA
-
         [Header("Wall running")] public LayerMask wallLayer;
         public LayerMask groundLayer;
         public float wallRunForce;
@@ -21,18 +19,15 @@ namespace _Scripts._PlayerScripts
         [Header("Input")] public KeyCode wallJump = KeyCode.Space;
         private float horizontalInput;
         private float verticalInput;
-        public float wallCheckDistance;
+        [Header("Detection")] public float wallCheckDistance;
         public float minJumpHeight;
         private RaycastHit leftWall;
         private RaycastHit rightWall;
         private bool isWallLeft;
         private bool isWallRight;
-        public Transform orientation;
+        [Header("References")] public Transform orientation;
         private PlayerMoveControl playerMoveControl;
         private Rigidbody rb;
-        // THÊM PredictedRigidbody
-
-        #endregion
 
         private void Start()
         {
@@ -42,25 +37,24 @@ namespace _Scripts._PlayerScripts
 
         private void Update()
         {
-            if (!isLocalPlayer)
+            if (isLocalPlayer)
             {
-                return;
+                WallCheck();
+                WallRunStateMachine();
             }
-
-            WallCheck();
-            WallRunStateMachine();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         private void FixedUpdate()
         {
-            if (!isLocalPlayer)
+            if (isLocalPlayer)
             {
-                return;
-            }
-
-            if (playerMoveControl.isWallRunning)
-            {
-                WallRun();
+                if (playerMoveControl.isWallRunning)
+                {
+                    WallRun();
+                }
             }
         }
 
@@ -71,13 +65,10 @@ namespace _Scripts._PlayerScripts
             isWallLeft = Physics.Raycast(transform.position, -orientation.right, out leftWall, wallCheckDistance,
                 wallLayer);
             //Debug ray 
-            if (isLocalPlayer)
-            {
-                Debug.DrawRay(transform.position, orientation.right * wallCheckDistance,
-                    isWallRight ? Color.green : Color.red);
-                Debug.DrawRay(transform.position, -orientation.right * wallCheckDistance,
-                    isWallLeft ? Color.green : Color.red);
-            }
+            Debug.DrawRay(transform.position, orientation.right * wallCheckDistance,
+                isWallRight ? Color.green : Color.red);
+            Debug.DrawRay(transform.position, -orientation.right * wallCheckDistance,
+                isWallLeft ? Color.green : Color.red);
         }
 
         private bool AboveGround()
@@ -87,13 +78,15 @@ namespace _Scripts._PlayerScripts
 
         private void WallRunStateMachine()
         {
+            //lấy H và V input
             horizontalInput = Input.GetAxis("Horizontal");
             verticalInput = Input.GetAxis("Vertical");
+            // state 1 Wallrunning 
             if ((isWallLeft || isWallRight) && verticalInput > 0 && AboveGround() && !isExitingWall)
             {
                 if (!playerMoveControl.isWallRunning)
                 {
-                    CmdStatWallRun();
+                    StartWallRun();
                 }
 
                 if (wallRunTimer > 0)
@@ -109,14 +102,15 @@ namespace _Scripts._PlayerScripts
 
                 if (Input.GetKeyDown(wallJump))
                 {
-                    CmdWallJump(isWallLeft, isWallRight, leftWall.normal, rightWall.normal);
+                    WallJump();
                 }
             }
+            // State 2 Exiting Wall
             else if (isExitingWall)
             {
                 if (playerMoveControl.isWallRunning)
                 {
-                    CmdStopWallRun();
+                    StopWallRun();
                 }
 
                 if (exitingWallTimer > 0)
@@ -129,46 +123,26 @@ namespace _Scripts._PlayerScripts
                     isExitingWall = false;
                 }
             }
+            //State 3 
             else
             {
                 if (playerMoveControl.isWallRunning)
                 {
-                    CmdStopWallRun();
+                    StopWallRun();
                 }
             }
         }
 
-        [Command]
-        private void CmdStatWallRun()
+        private void StartWallRun()
         {
             playerMoveControl.isWallRunning = true;
             wallRunTimer = maxWallRunTime;
         }
 
-        [Command]
-        private void CmdStopWallRun()
-        {
-            playerMoveControl.isWallRunning = false;
-            // Sử dụng predictedRigidbody để đảm bảo tương thích với prediction
-            rb.useGravity = true;
-        }
-
-        [Command]
-        private void CmdWallJump(bool isWLeft, bool isWRight, Vector3 leftWallNormal, Vector3 rightWallNormal)
-        {
-            isExitingWall = true;
-            exitingWallTimer = exitingWallTime;
-            Vector3 wallNormal = isWRight ? rightWallNormal : leftWallNormal;
-            Vector3 force = transform.up * wallRunUpForce + wallNormal * wallRunSideForce;
-            rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
-            rb.AddForce(force, ForceMode.Impulse);
-            CmdStopWallRun();
-        }
-
         private void WallRun()
         {
-            // rb.useGravity = false; // Đã chuyển vào CmdStatWallRun
-            rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z); // Xóa vận tốc Y trên server
+            rb.useGravity = false;
+            rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
             Vector3 wallNormal = isWallRight ? rightWall.normal : leftWall.normal;
             Vector3 wallForward = Vector3.Cross(wallNormal, transform.up);
             if ((orientation.forward - wallForward).magnitude > (orientation.forward - -wallForward).magnitude)
@@ -180,6 +154,23 @@ namespace _Scripts._PlayerScripts
             // push to wall force
             if (!(isWallLeft && horizontalInput > 0) && !(isWallRight && horizontalInput < 0))
                 rb.AddForce(-wallNormal * 100, ForceMode.Force);
+        }
+
+        private void StopWallRun()
+        {
+            playerMoveControl.isWallRunning = false;
+        }
+
+        private void WallJump()
+        {
+            // state enter , exit của wall run
+            isExitingWall = true;
+            exitingWallTimer = exitingWallTime;
+            /////////////////////////////////
+            Vector3 wallNormal = isWallRight ? rightWall.normal : leftWall.normal;
+            Vector3 force = transform.up * wallRunUpForce + wallNormal * wallRunSideForce;
+            rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
+            rb.AddForce(force, ForceMode.Impulse);
         }
     }
 }
