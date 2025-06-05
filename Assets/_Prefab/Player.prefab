@@ -12773,7 +12773,6 @@ GameObject:
   - component: {fileID: 6799092821092802977}
   - component: {fileID: 149816925531920771}
   - component: {fileID: 3756073565299754509}
-  - component: {fileID: 6229833710204722487}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -12947,43 +12946,6 @@ MonoBehaviour:
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
---- !u!114 &6229833710204722487
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4542065522658913608}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d38927cdc6024b9682b5fe9778b9ef99, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
-  predictedRigidbody: {fileID: 8087022102156899555}
-  mode: 0
-  motionSmoothingVelocityThreshold: 0.1
-  motionSmoothingAngularVelocityThreshold: 5
-  motionSmoothingTimeTolerance: 0.5
-  stateHistoryLimit: 32
-  recordInterval: 0.05
-  onlyRecordChanges: 1
-  compareLastFirst: 1
-  positionCorrectionThreshold: 0.1
-  rotationCorrectionThreshold: 5
-  oneFrameAhead: 1
-  snapThreshold: 2
-  showGhost: 1
-  ghostVelocityThreshold: 0.1
-  localGhostMaterial: {fileID: 2100000, guid: 411a48b4a197d4924bec3e3809bc9320, type: 2}
-  remoteGhostMaterial: {fileID: 2100000, guid: 04f0b2088c857414393bab3b80356776, type: 2}
-  checkGhostsEveryNthFrame: 4
-  positionInterpolationSpeed: 15
-  rotationInterpolationSpeed: 10
-  teleportDistanceMultiplier: 10
-  reduceSendsWhileIdle: 1
 --- !u!1 &5813707146752653807
 GameObject:
   m_ObjectHideFlags: 0

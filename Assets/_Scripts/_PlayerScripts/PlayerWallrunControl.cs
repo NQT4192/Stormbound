@@ -1,4 +1,3 @@
-
 using System;
 using Mirror;
 using UnityEngine;
@@ -8,7 +7,7 @@ namespace _Scripts._PlayerScripts
     public class PlayerWallrunControl : NetworkBehaviour
     {
         #region DATA
-        
+
         [Header("Wall running")] public LayerMask wallLayer;
         public LayerMask groundLayer;
         public float wallRunForce;
@@ -32,13 +31,13 @@ namespace _Scripts._PlayerScripts
         private PlayerMoveControl playerMoveControl;
         private Rigidbody rb;
         // THÊM PredictedRigidbody
-        private PredictedRigidbody predictedRb;
+
         #endregion
+
         private void Start()
         {
             rb = GetComponent<Rigidbody>();
             playerMoveControl = GetComponent<PlayerMoveControl>();
-            predictedRb = GetComponent<PredictedRigidbody>(); // Lấy PredictedRigidbody
         }
 
         private void Update()
@@ -47,16 +46,18 @@ namespace _Scripts._PlayerScripts
             {
                 return;
             }
+
             WallCheck();
             WallRunStateMachine();
         }
-        
+
         private void FixedUpdate()
         {
             if (!isLocalPlayer)
             {
                 return;
             }
+
             if (playerMoveControl.isWallRunning)
             {
                 WallRun();
@@ -71,24 +72,24 @@ namespace _Scripts._PlayerScripts
                 wallLayer);
             //Debug ray 
             if (isLocalPlayer)
-            { 
+            {
                 Debug.DrawRay(transform.position, orientation.right * wallCheckDistance,
-                isWallRight? Color.green : Color.red);
+                    isWallRight ? Color.green : Color.red);
                 Debug.DrawRay(transform.position, -orientation.right * wallCheckDistance,
-                isWallLeft? Color.green : Color.red);
+                    isWallLeft ? Color.green : Color.red);
             }
         }
 
         private bool AboveGround()
         {
-            return!Physics.Raycast(transform.position, Vector3.down, minJumpHeight, groundLayer);
+            return !Physics.Raycast(transform.position, Vector3.down, minJumpHeight, groundLayer);
         }
 
         private void WallRunStateMachine()
         {
             horizontalInput = Input.GetAxis("Horizontal");
             verticalInput = Input.GetAxis("Vertical");
-            if ((isWallLeft || isWallRight) && verticalInput > 0 && AboveGround() &&!isExitingWall)
+            if ((isWallLeft || isWallRight) && verticalInput > 0 && AboveGround() && !isExitingWall)
             {
                 if (!playerMoveControl.isWallRunning)
                 {
@@ -105,9 +106,10 @@ namespace _Scripts._PlayerScripts
                     isExitingWall = true;
                     exitingWallTimer = exitingWallTime;
                 }
+
                 if (Input.GetKeyDown(wallJump))
                 {
-                    CmdWallJump(isWallLeft ,isWallRight , leftWall.normal , rightWall.normal);
+                    CmdWallJump(isWallLeft, isWallRight, leftWall.normal, rightWall.normal);
                 }
             }
             else if (isExitingWall)
@@ -148,57 +150,36 @@ namespace _Scripts._PlayerScripts
         {
             playerMoveControl.isWallRunning = false;
             // Sử dụng predictedRigidbody để đảm bảo tương thích với prediction
-            Rigidbody currentRb = predictedRb!= null? predictedRb.predictedRigidbody : rb;
-            currentRb.useGravity = true;
+            rb.useGravity = true;
         }
 
         [Command]
-        private void CmdWallJump(bool isWLeft, bool isWRight ,  Vector3 leftWallNormal , Vector3 rightWallNormal)
+        private void CmdWallJump(bool isWLeft, bool isWRight, Vector3 leftWallNormal, Vector3 rightWallNormal)
         {
             isExitingWall = true;
             exitingWallTimer = exitingWallTime;
-            Vector3 wallNormal = isWRight? rightWallNormal : leftWallNormal;
-            Vector3 force =  transform.up * wallRunUpForce + wallNormal * wallRunSideForce;
-            // Sử dụng predictedRigidbody để đảm bảo tương thích với prediction
-            Rigidbody currentRb = predictedRb!= null? predictedRb.predictedRigidbody : rb;
-            currentRb.velocity = new Vector3(currentRb.velocity.x, 0, currentRb.velocity.z);
-            currentRb.AddForce(force , ForceMode.Impulse);
+            Vector3 wallNormal = isWRight ? rightWallNormal : leftWallNormal;
+            Vector3 force = transform.up * wallRunUpForce + wallNormal * wallRunSideForce;
+            rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
+            rb.AddForce(force, ForceMode.Impulse);
             CmdStopWallRun();
         }
-        
+
         private void WallRun()
         {
-            // Sử dụng predictedRigidbody để đảm bảo tương thích với prediction
-            Rigidbody currentRb = predictedRb!= null? predictedRb.predictedRigidbody : rb;
-
-            currentRb.useGravity = false;
-            currentRb.velocity = new Vector3(currentRb.velocity.x, 0, currentRb.velocity.z);
-            Vector3 wallNormal = isWallRight? rightWall.normal : leftWall.normal;
+            // rb.useGravity = false; // Đã chuyển vào CmdStatWallRun
+            rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z); // Xóa vận tốc Y trên server
+            Vector3 wallNormal = isWallRight ? rightWall.normal : leftWall.normal;
             Vector3 wallForward = Vector3.Cross(wallNormal, transform.up);
             if ((orientation.forward - wallForward).magnitude > (orientation.forward - -wallForward).magnitude)
             {
                 wallForward = -wallForward;
             }
 
-            Vector3 forceToApply = wallForward * wallRunForce;
-            currentRb.AddForce(forceToApply, ForceMode.Force);
-            CmdApplyForce(forceToApply, ForceMode.Force); // Gửi lệnh lên server
-
-            if (!(isWallLeft && horizontalInput > 0) &&!(isWallRight && horizontalInput < 0))
-            {
-                Vector3 pushForce = -wallNormal * 100;
-                currentRb.AddForce(pushForce, ForceMode.Force);
-                CmdApplyForce(pushForce, ForceMode.Force); // Gửi lệnh lên server
-            }
-        }
-
-        // THÊM COMMAND để gửi lực từ client lên server cho prediction
-        [Command]
-        private void CmdApplyForce(Vector3 force, ForceMode mode)
-        {
-            // Server cũng áp dụng lực này
-            Rigidbody currentRb = predictedRb!= null? predictedRb.predictedRigidbody : rb;
-            currentRb.AddForce(force, mode);
+            rb.AddForce(wallForward * wallRunForce, ForceMode.Force);
+            // push to wall force
+            if (!(isWallLeft && horizontalInput > 0) && !(isWallRight && horizontalInput < 0))
+                rb.AddForce(-wallNormal * 100, ForceMode.Force);
         }
     }
 }

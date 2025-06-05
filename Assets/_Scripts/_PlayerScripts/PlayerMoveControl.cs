@@ -53,8 +53,7 @@ namespace _Scripts._PlayerScripts
         public MoveState moveState;
         public bool isWallRunning;
 
-        // THÊM PredictedRigidbody
-        private PredictedRigidbody predictedRb;
+        // private PredictedRigidbody predictedRb;
 
         public enum MoveState
         {
@@ -71,14 +70,7 @@ namespace _Scripts._PlayerScripts
             rb.freezeRotation = true;
             readyToJump = true;
             starYScale = transform.localScale.y;
-
-            // Lấy PredictedRigidbody component
-            predictedRb = GetComponent<PredictedRigidbody>();
-            if (predictedRb == null)
-            {
-                Debug.LogError("PredictedRigidbody component not found. Client-side prediction will not work.");
-            }
-
+            
             if (!isLocalPlayer)
             {
                 if (SpeedText!= null) SpeedText.gameObject.SetActive(false);
@@ -139,19 +131,12 @@ namespace _Scripts._PlayerScripts
 
         void FixedUpdate()
         {
-            // Nếu là người chơi cục bộ, áp dụng lực cục bộ và gửi lệnh lên server
-            if (isLocalPlayer)
-            {
-                MovePlayer();
-                SpeedControl();
-            }
-
+            
             // Server cũng xử lý vật lý để là authoritative
             if (isServer)
             {
-                // Logic vật lý đã được xử lý trong MovePlayer() và SpeedControl()
-                // nếu bạn muốn server là authoritative hoàn toàn, bạn có thể gọi lại chúng ở đây
-                // hoặc đảm bảo rằng các lệnh từ client đủ để server tái tạo chính xác
+                MovePlayer();
+                SpeedControl();
             }
         }
 
@@ -200,9 +185,9 @@ namespace _Scripts._PlayerScripts
             // Logic nhảy chỉ thực hiện trên server
             isOnSlope = true;
             // Sử dụng predictedRigidbody để đảm bảo tương thích với prediction
-            Rigidbody currentRb = predictedRb!= null? predictedRb.predictedRigidbody : rb;
-            currentRb.velocity = new Vector3(currentRb.velocity.x, 0f, currentRb.velocity.z);
-            currentRb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
+
+            rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+            rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
         }
 
         [Command]
@@ -211,9 +196,9 @@ namespace _Scripts._PlayerScripts
             if (isCrouching)
             {
                 transform.localScale = new Vector3(transform.localScale.x, crouchYScale, transform.localScale.z);
-                // Sử dụng predictedRigidbody để đảm bảo tương thích với prediction
-                Rigidbody currentRb = predictedRb!= null? predictedRb.predictedRigidbody : rb;
-                currentRb.AddForce(Vector3.down * 5f, ForceMode.Impulse);
+           
+                
+                rb.AddForce(Vector3.down * 5f, ForceMode.Impulse);
             }
             else
             {
@@ -227,8 +212,8 @@ namespace _Scripts._PlayerScripts
         {
             // Server cũng áp dụng lực này
             // Sử dụng predictedRigidbody để đảm bảo tương thích với prediction
-            Rigidbody currentRb = predictedRb!= null? predictedRb.predictedRigidbody : rb;
-            currentRb.AddForce(force, mode);
+        
+            rb.AddForce(force, mode);
         }
 
 
@@ -248,8 +233,8 @@ namespace _Scripts._PlayerScripts
 
             // Áp dụng lực cục bộ cho phản hồi tức thì
             // Sử dụng predictedRigidbody để đảm bảo tương thích với prediction
-            Rigidbody currentRb = predictedRb!= null? predictedRb.predictedRigidbody : rb;
-            currentRb.AddForce(forceToApply, ForceMode.Force);
+           // Rigidbody currentRb = predictedRb!= null? predictedRb.predictedRigidbody : rb;
+            rb.AddForce(forceToApply, ForceMode.Force);
 
             // Gửi lệnh lên server để server cũng áp dụng lực này
             CmdApplyForce(forceToApply, ForceMode.Force);
@@ -258,22 +243,20 @@ namespace _Scripts._PlayerScripts
         private void SpeedControl()
         {
             // Sử dụng predictedRigidbody để đảm bảo tương thích với prediction
-            Rigidbody currentRb = predictedRb!= null? predictedRb.predictedRigidbody : rb;
-
             if (SlopeCheck() &&!isOnSlope)
             {
-                if (currentRb.velocity.magnitude > moveSpeed)
+                if (rb.velocity.magnitude > moveSpeed)
                 {
-                    currentRb.velocity = currentRb.velocity.normalized * moveSpeed;
+                    rb.velocity = rb.velocity.normalized * moveSpeed;
                 }
             }
             else
             {
-                Vector3 flatVelocity = new Vector3(currentRb.velocity.x, 0f, currentRb.velocity.z);
+                Vector3 flatVelocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
                 if (flatVelocity.magnitude > moveSpeed)
                 {
                     Vector3 limitVelocity = flatVelocity.normalized * moveSpeed;
-                    currentRb.velocity = new Vector3(limitVelocity.x, currentRb.velocity.y, limitVelocity.z);
+                    rb.velocity = new Vector3(limitVelocity.x, rb.velocity.y, limitVelocity.z);
                 }
             }
         }
